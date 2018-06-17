@@ -1,0 +1,68 @@
+service: DRM-Filter-API
+
+provider:
+  name: aws
+  runtime: python3.6
+  stage: ${env:ENV}
+  memorySize: 128
+  timeout: 10
+  versionFunctions: false
+  region: ${env:AWS_REGION}
+  variableSyntax: "\\${(?!AWS::)((?:self|env):[ :a-zA-Z0-9._,\\-\\/\\(\\)]+?)}"
+  stackTags:
+    FRAMEWORK: serverless
+  environment:
+    ENV: ${env:ENV}
+    LOGLEVEL: ${env:LOGLEVEL}
+
+package:
+  artifact: package/package.zip
+
+
+functions:
+  handler:
+    handler: drm_filter_api.handler
+    events:
+      - http: POST /
+
+resources:
+  Resources:
+    DomainName:
+      Type: "AWS::ApiGateway::DomainName"
+      Properties:
+        CertificateArn: ${env:AWS_ACM_CERTIFICATE}
+        DomainName: ${env:DOMAIN_NAME}
+    BasePathMapping:
+      Type: "AWS::ApiGateway::BasePathMapping"
+      Properties:
+        BasePath: "(none)"
+        DomainName:
+          Ref: DomainName
+        RestApiId: { "Ref": "ApiGatewayRestApi" }
+        Stage: ${env:ENV}
+    RecordSet:
+      Type: AWS::Route53::RecordSet
+      Properties:
+        HostedZoneName: ${env:AWS_HOSTED_ZONE}.
+        Name: ${env:DOMAIN_NAME}
+        Type: A
+        AliasTarget:
+          HostedZoneId: "Z2FDTNDATAQYW2"
+          DNSName:
+            Fn::GetAtt: [ "DomainName", "DistributionDomainName" ]
+    RecordSetAAAA:
+      Type: AWS::Route53::RecordSet
+      Properties:
+        HostedZoneName: ${env:AWS_HOSTED_ZONE}.
+        Name: ${env:DOMAIN_NAME}
+        Type: AAAA
+        AliasTarget:
+          HostedZoneId: "Z2FDTNDATAQYW2"
+          DNSName:
+            Fn::GetAtt: [ "DomainName", "DistributionDomainName" ]
+  Outputs:
+    LambdaUrl:
+      Value: "https://${env:DOMAIN_NAME}"
+    CloudFrontDomainName:
+      Value:
+        Fn::GetAtt: [ 'DomainName', 'DistributionDomainName' ]
