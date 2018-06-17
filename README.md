@@ -1,7 +1,13 @@
 # drm-filter-api
 
+Uses the [serverless](https://serverless.com/) framework to deploy to AWS Lambda.
+
+## Requirements
+  * Docker
+  * docker-compose
+  * Make
+
 ## Deploying
-To install the required NPM modules for Serverless:
 To create the virtualenv, install requirements using pip and then create the package.zip for uploading to Lambda:
 ```
 make build
